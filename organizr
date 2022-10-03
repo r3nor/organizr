@@ -1,0 +1,193 @@
+#!/bin/bash
+# Available modes
+MODES=( video photo audio document app compressed torrent all )
+
+# Type variables
+TYPES_VIDEO=( mov mp4 avi webm mpeg mpg )
+TYPES_PHOTO=( png jpg jpeg svg gif webp ai psd )
+TYPES_AUDIO=( mp3 midi opus 3gp aa aac aax aiff au flac m4p wav m4a )
+TYPES_DOCUMENT=( pdf doc docx odt epub html md eml txt )
+TYPES_APP=( AppImage deb rpm apk run )
+TYPES_COMPRESSED=( rar zip 7z jex tar tar.gz )
+TYPES_TORRENT=( torrent )
+
+dirError () {
+    echo "The directory $1 is not valid."
+    exit 1
+}
+
+usage() {
+    echo "Organizes a given <source> folder's files into correspondingly named subfolders depending on the set <mode>."
+    echo ""
+    echo "USAGE: organizr <mode> <source> [dest]"
+    echo "- <mode>: ${MODES[@]}"
+    echo ""
+    echo "  video: Organize video files (${VIDEO[@]})."
+    echo "  photo: Organize photo files (${PHOTO[@]})."
+    echo "  audio: Organize audio files (${AUDIO[@]})."
+    echo "  document: Organize document files (${DOC[@]})."
+    echo "  app: Organize app files (${APP[@]})."
+    echo "  compressed: Organize compressed files (${COMPRESSED[@]})."
+    echo "  torrent: Organize audio files (${TORRENT[@]})."
+    echo "  all: Organize all files (all of the above)."
+    echo ""
+    echo "- <source>: Absolute path to the folder to organize."
+    echo ""
+    echo "- [dest]: Optional parameter. Destination folder where organized files should be moved."
+
+}
+
+organize() {
+    TYPES=$1
+    SOURCE=$2
+    DESTINATION=$3
+    MAX_DEPTH=1
+
+    # Create a regex of the extensions for the find command
+    TYPES_RE="\\("${TYPES[0]}
+    for t in "${TYPES[@]:1:${#TYPES[*]}}"; do
+        TYPES_RE="${TYPES_RE}\\|${t}"
+    done
+    TYPES_RE="${TYPES_RE}\\)"
+
+    # Set the field seperator to newline instead of space
+    SAVEIFS=$IFS
+    IFS=$(echo -en "\n\b")
+
+
+    if [ ! -d "$DESTINATION" ]; then
+        mkdir -p $DESTINATION || dirError $DESTINATION
+    fi
+
+    FIND_PREMOVE=`find ${SOURCE} -maxdepth $MAX_DEPTH -type f -regex ".*\.${TYPES_RE}"`
+    if [ -z $FIND_PREMOVE ]; then
+        echo "Types: ${TYPES[@]}"
+        echo "💤 Nothing to do..."
+        echo "--- --- ---"
+        echo ""
+    else
+        echo "Moving: ${TYPES[@]}"
+        echo "FROM: $SOURCE -> TO: $DESTINATION"
+        echo "--- --- ---"
+        echo ""
+        for f in $FIND_PREMOVE; do
+            echo "$f --> $DESTINATION"
+            mv $f $DESTINATION
+        done
+        echo ""
+        echo "--- --- --- ---"
+        echo "✨ Organized!"
+        echo ""
+        echo "📊 Stats:"
+        echo "   - Folder size: `du -hsc $DESTINATION | head -2 | tail -1`"
+        echo "   - Items in folder: `ls | wc -l`"
+    fi
+    # Reset IFS
+    IFS=$SAVEIFS
+}
+
+# Check if enough arguments are provided
+if [ $# -lt 2 ]; then
+    usage
+fi
+
+# Set variables
+MODE=$1
+SOURCE=$2
+
+# Set variable if exists
+if [ $# -eq 3 ]; then
+    DESTINATION=$3
+fi
+
+if [ ! -d "$SOURCE" ]; then
+    dirError $SOURCE
+fi
+
+# Set types
+TYPES=( )
+
+echo ${MODES[@]} | grep -w -q $MODE
+if [ $? -eq 1 ]; then
+    echo "Mode $MODE does not exist."
+    echo "Available modes: [${MODES[@]}]"
+    exit 1
+fi
+
+
+# Perform action
+case "$MODE" in
+    "video")
+        TYPES=("${TYPES_VIDEO[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Videos
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "photo")
+        TYPES=("${TYPES_PHOTO[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Photos
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "document")
+        TYPES=("${TYPES_DOCUMENT[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Documents
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "app")
+        TYPES=("${TYPES_APP[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Apps
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "compressed")
+        TYPES=("${TYPES_COMPRESSED[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Compresseds
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "torrent")
+        TYPES=("${TYPES_TORRENT[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Torrents
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+    "audio")
+        TYPES=("${TYPES_AUDIO[@]}")
+        if [ ! $# -eq 3 ]; then
+            DESTINATION=$SOURCE/Audios
+        fi
+        organize $TYPES $SOURCE $DESTINATION
+    ;;
+
+
+    "all")
+        for type in "${MODES[@]}"; do
+            if [ $type == "all" ]; then
+                continue
+            fi
+
+            typeup=${type^^}
+            TYPES=TYPES_$typeup[@]
+            TYPES=( ${!TYPES} )
+            echo "$typeup: ${TYPES[@]}"
+            if [ ! $# -eq 3 ]; then
+                DESTINATION=$SOURCE/${type^}s
+            fi
+            organize $TYPES $SOURCE $DESTINATION
+        done
+    ;;
+esac
