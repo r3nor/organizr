@@ -7,7 +7,7 @@ My "Downloads" folder tends to get very messy. I wanted to have it tidy and clea
 
 ## Usage
 
-[![asciicast](https://asciinema.org/a/QQQJx4Myt9aBRbsW4TJ2NIOme.svg)](https://asciinema.org/a/QQQJx4Myt9aBRbsW4TJ2NIOme)
+[![asciicast](https://asciinema.org/a/wBLIYJpcJLWOquyrjb34HF1Vo.svg)](https://asciinema.org/a/wBLIYJpcJLWOquyrjb34HF1Vo)
 
 ```
 bash organizr <mode> <source> [destination]
