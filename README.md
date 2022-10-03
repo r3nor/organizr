@@ -1,5 +1,5 @@
 # organizr
-Bash script that organizes a folder's files.
+Bash script that organizes a folder's files. 0 dependencies. No installations. Just a bash script.
 
 ## The problem
 
